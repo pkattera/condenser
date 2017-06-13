@@ -61,7 +61,7 @@ function* loadSavingsWithdraw() {
     for(const v of fro) m[v.id] = v
 
     const withdraws = List(fromJS(m).values())
-        .sort((a, b) => strCmp(a.get('complete'), b.get('complete')))
+            .sort((a, b) => strCmp(a.get('complete'), b.get('complete')))
 
     yield put(user.actions.set({
         key: 'savings_withdraws',
@@ -86,10 +86,10 @@ function* removeHighSecurityKeys({payload: {pathname}}) {
 }
 
 /**
-    @arg {object} action.username - Unless a WIF is provided, this is hashed with the password and key_type to create private keys.
-    @arg {object} action.password - Password or WIF private key.  A WIF becomes the posting key, a password can create all three
-        key_types: active, owner, posting keys.
-*/
+ @arg {object} action.username - Unless a WIF is provided, this is hashed with the password and key_type to create private keys.
+ @arg {object} action.password - Password or WIF private key.  A WIF becomes the posting key, a password can create all three
+ key_types: active, owner, posting keys.
+ */
 function* usernamePasswordLogin(action) {
     // Sets 'loading' while the login is taking place.  The key generation can take a while on slow computers.
     yield call(usernamePasswordLogin2, action)
@@ -108,7 +108,7 @@ function* usernamePasswordLogin(action) {
 const clean = (value) => value == null || value === '' || /null|undefined/.test(value) ? undefined : value
 
 function* usernamePasswordLogin2({payload: {username, password, saveLogin,
-        operationType /*high security*/, afterLoginRedirectToWelcome
+    operationType /*high security*/, afterLoginRedirectToWelcome
 }}) {
     // login, using saved password
     let autopost, memoWif, login_owner_pubkey, login_wif_owner_pubkey
@@ -156,16 +156,16 @@ function* usernamePasswordLogin2({payload: {username, password, saveLogin,
         private_keys = fromJS({
             posting_private: isRole('posting', () => private_key),
             active_private: isRole('active', () => private_key),
-            memo_private: private_key,
-        })
+        memo_private: private_key,
+    })
     } catch (e) {
         // Password (non wif)
         login_owner_pubkey = PrivateKey.fromSeed(username + 'owner' + password).toPublicKey().toString()
         private_keys = fromJS({
             posting_private: isRole('posting', () => PrivateKey.fromSeed(username + 'posting' + password)),
             active_private: isRole('active', () => PrivateKey.fromSeed(username + 'active' + password)),
-            memo_private: PrivateKey.fromSeed(username + 'memo' + password),
-        })
+        memo_private: PrivateKey.fromSeed(username + 'memo' + password),
+    })
     }
     if (memoWif)
         private_keys = private_keys.set('memo_private', PrivateKey.fromWif(memoWif))
@@ -215,7 +215,7 @@ function* usernamePasswordLogin2({payload: {username, password, saveLogin,
     if (private_keys.get('memo_private') &&
         account.get('memo_key') !== private_keys.get('memo_private').toPublicKey().toString()
     )
-        // provided password did not yield memo key
+    // provided password did not yield memo key
         private_keys = private_keys.remove('memo_private')
 
     if(!highSecurityLogin) {
@@ -235,7 +235,7 @@ function* usernamePasswordLogin2({payload: {username, password, saveLogin,
         memo_pubkey === owner_pubkey ||
         memo_pubkey === active_pubkey
     )
-        // Memo key could be saved in local storage.. In RAM it is not purged upon LOCATION_CHANGE
+    // Memo key could be saved in local storage.. In RAM it is not purged upon LOCATION_CHANGE
         private_keys = private_keys.remove('memo_private')
 
     // If user is signing operation by operaion and has no saved login, don't save to RAM
@@ -305,12 +305,12 @@ function* saveLogin_localStorage() {
     try {
         account.getIn(['active', 'key_auths']).forEach(auth => {
             if(auth.get(0) === postingPubkey)
-                throw 'Login will not be saved, posting key is the same as active key'
-        })
+        throw 'Login will not be saved, posting key is the same as active key'
+    })
         account.getIn(['owner', 'key_auths']).forEach(auth => {
             if(auth.get(0) === postingPubkey)
-                throw 'Login will not be saved, posting key is the same as owner key'
-        })
+        throw 'Login will not be saved, posting key is the same as owner key'
+    })
     } catch(e) {
         console.error(e)
         return
@@ -334,8 +334,8 @@ function* loginError({payload: {/*error*/}}) {
 }
 
 /**
-    If the owner key was changed after the login owner key, this function will find the next owner key history record after the change and store it under user.previous_owner_authority.
-*/
+ If the owner key was changed after the login owner key, this function will find the next owner key history record after the change and store it under user.previous_owner_authority.
+ */
 function* lookupPreviousOwnerAuthority({payload: {}}) {
     const current = yield select(state => state.user.get('current'))
     if(!current) return
@@ -353,17 +353,17 @@ function* lookupPreviousOwnerAuthority({payload: {}}) {
     let owner_history = fromJS(yield call([api, api.getOwnerHistoryAsync], username))
     if(owner_history.count() === 0) return
     owner_history = owner_history.sort((b, a) => {//sort decending
-        const aa = a.get('last_valid_time')
-        const bb = b.get('last_valid_time')
-        return aa < bb ? -1 : aa > bb ? 1 : 0
-    })
+            const aa = a.get('last_valid_time')
+            const bb = b.get('last_valid_time')
+            return aa < bb ? -1 : aa > bb ? 1 : 0
+        })
     // console.log('UserSaga ---> owner_history', owner_history.toJS())
     const previous_owner_authority = owner_history.find(o => {
-        const auth = o.get('previous_owner_authority')
-        const weight_threshold = auth.get('weight_threshold')
-        const key3 = auth.get('key_auths').find(key2 => key2.get(0) === login_owner_pubkey && key2.get(1) >= weight_threshold)
-        return key3 ? auth : null
-    })
+            const auth = o.get('previous_owner_authority')
+            const weight_threshold = auth.get('weight_threshold')
+            const key3 = auth.get('key_auths').find(key2 => key2.get(0) === login_owner_pubkey && key2.get(1) >= weight_threshold)
+    return key3 ? auth : null
+})
     if(!previous_owner_authority) {
         console.log('UserSaga ---> Login owner does not match owner history');
         return
@@ -406,11 +406,11 @@ function* uploadImage({payload: {file, dataUrl, filename = 'image.txt', progress
         const reader = new FileReader()
         data = yield new Promise(resolve => {
             reader.addEventListener('load', () => {
-                const result = new Buffer(reader.result, 'binary')
-                resolve(result)
-            })
-            reader.readAsBinaryString(file)
+            const result = new Buffer(reader.result, 'binary')
+            resolve(result)
         })
+        reader.readAsBinaryString(file)
+    })
     } else {
         // recover from preview
         const commaIdx = dataUrl.indexOf(',')
